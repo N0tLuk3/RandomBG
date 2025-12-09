@@ -6,7 +6,7 @@ Python-Tray-App, die den Desktop-Hintergrund in einem festen Zeitintervall wechs
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+.venv\\Scripts\\activate
 pip install -r requirements.txt
 ```
 

@@ -6,7 +6,7 @@ import os
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Protocol
+from typing import Any, List, Optional
 
 import pystray
 from PIL import Image, ImageDraw
@@ -176,7 +176,7 @@ def run_tray() -> None:
     def on_next() -> None:
         service.next_wallpaper()
 
-    def on_quit(icon: pystray.Icon, _item: MenuItem) -> None:
+    def on_quit(icon: Any, _item: object) -> None:
         service.stop()
         icon.stop()
         root.quit()
