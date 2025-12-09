@@ -6,7 +6,7 @@ import os
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Protocol
 
 import pystray
 from PIL import Image, ImageDraw
