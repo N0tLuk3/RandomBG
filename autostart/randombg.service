@@ -8,9 +8,10 @@ Type=simple
 WorkingDirectory=%h/RandomBG
 # Verwende dein (virtuelles) Environment, falls vorhanden
 Environment=PATH=%h/RandomBG/.venv/bin:/usr/local/bin:/usr/bin
-# Stellen sicher, dass das Tray eine X11/Wayland Session findet
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=%h/.Xauthority
+# Übernimmt DISPLAY, WAYLAND_DISPLAY und XAUTHORITY aus deiner Session.
+# Stelle sicher, dass der User-Service mit einer aktiven Session gestartet
+# wird oder importiere die Variablen einmalig mit:
+#   systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY
 ExecStart=/usr/bin/env python -m random_bg.app
 Restart=on-failure
 
