@@ -1,0 +1,18 @@
+[Unit]
+Description=RandomBG Tray App
+After=network.target
+
+[Service]
+Type=simple
+# Passe diesen Pfad an deinen Projekt- oder Installationsort an
+WorkingDirectory=%h/RandomBG
+# Verwende dein (virtuelles) Environment, falls vorhanden
+Environment=PATH=%h/RandomBG/.venv/bin:/usr/local/bin:/usr/bin
+# Stellen sicher, dass das Tray eine X11/Wayland Session findet
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+ExecStart=/usr/bin/env python -m random_bg.app
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
