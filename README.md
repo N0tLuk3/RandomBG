@@ -48,5 +48,5 @@ python -m random_bg.app
 
 ## Autostart unter Windows
 
-1. Erstelle eine Verknüpfung, die `pythonw.exe -m random_bg.app` ausführt (ggf. den Pfad zu `pythonw.exe`/dem virtuellen Environment anpassen).
-2. Lege die Verknüpfung im Autostart-Ordner ab (`shell:startup` im Ausführen-Dialog). Beim nächsten Login startet die App ohne sichtbares Terminal.
+1. Führe auf dem Zielsystem das PowerShell-Skript `autostart/install-randombg-startup.ps1` aus. Es erstellt im Autostart-Ordner automatisch eine Verknüpfung, die das mitgelieferte `start-randombg-windows.bat` startet (Standard-Pfad: `C:\RandomBG`).
+2. Alternativ kannst du manuell eine Verknüpfung erstellen, die `pythonw.exe -m random_bg.app` ausführt (ggf. den Pfad zu `pythonw.exe`/dem virtuellen Environment anpassen) und diese im Autostart-Ordner ablegen (`shell:startup` im Ausführen-Dialog). Beim nächsten Login startet die App ohne sichtbares Terminal.
