@@ -17,9 +17,27 @@ python -m random_bg.app
 ```
 
 * Das Tray-Icon erscheint und wechselt die Hintergründe automatisch.
-* Über "Einstellungen" können Ordner und Intervall (Sekunden) angepasst werden.
+* Über "Einstellungen" können Ordner, Intervall (Sekunden) und Autostart aktiviert/deaktiviert werden.
 * "Nächstes Hintergrundbild" setzt sofort das nächste Bild aus dem ausgewählten Ordner.
 * Konfiguration wird in `~/.random_bg_config.json` gespeichert.
+
+## Exe unter Windows erstellen
+
+Mit dem beiliegenden Build-Skript kannst du eine portable Windows-Exe erzeugen, die ohne installierte Python-Laufzeit läuft:
+
+1. Installiere PyInstaller im aktiven Python-Environment:
+
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. Baue das Exe-Paket (unter Windows ausführen):
+
+   ```bash
+   python build_exe.py
+   ```
+
+   Die fertige Datei landet in `dist/RandomBG.exe` und enthält alle Abhängigkeiten.
 
 ## Im Hintergrund ohne Terminal laufen lassen
 
