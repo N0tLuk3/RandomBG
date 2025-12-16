@@ -14,6 +14,7 @@ from pystray import MenuItem
 from tkinter import filedialog, messagebox, ttk
 import tkinter as tk
 
+from .autostart import AutostartError, AutostartManager
 from .wallpaper import iter_images, set_wallpaper
 
 CONFIG_FILE = Path.home() / ".random_bg_config.json"
@@ -25,9 +26,13 @@ DEFAULT_FOLDER = str(Path.home())
 class Settings:
     folder: str = DEFAULT_FOLDER
     interval_seconds: int = DEFAULT_INTERVAL
+    autostart_enabled: bool = False
 
     @classmethod
     def load(cls) -> "Settings":
+        autostart_manager = AutostartManager()
+        autostart_default = autostart_manager.is_enabled()
+
         if CONFIG_FILE.exists():
             try:
                 with CONFIG_FILE.open("r", encoding="utf-8") as handle:
@@ -35,13 +40,18 @@ class Settings:
                 return cls(
                     folder=data.get("folder", DEFAULT_FOLDER),
                     interval_seconds=int(data.get("interval_seconds", DEFAULT_INTERVAL)),
+                    autostart_enabled=bool(data.get("autostart_enabled", autostart_default)),
                 )
             except (OSError, ValueError):
                 pass
-        return cls()
+        return cls(autostart_enabled=autostart_default)
 
     def save(self) -> None:
-        payload = {"folder": self.folder, "interval_seconds": self.interval_seconds}
+        payload = {
+            "folder": self.folder,
+            "interval_seconds": self.interval_seconds,
+            "autostart_enabled": self.autostart_enabled,
+        }
         with CONFIG_FILE.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2)
 
@@ -95,6 +105,7 @@ class SettingsWindow:
         self.settings = settings
         self.service = service
         self.window: Optional[tk.Toplevel] = None
+        self.autostart_manager = AutostartManager()
 
     def open(self) -> None:
         if self.window and tk.Toplevel.winfo_exists(self.window):
@@ -119,8 +130,14 @@ class SettingsWindow:
         interval_entry = ttk.Entry(self.window, textvariable=self.interval_var, width=10)
         interval_entry.grid(column=1, row=1, padx=8, pady=8, sticky="w")
 
+        autostart_label = ttk.Label(self.window, text="Autostart aktivieren:")
+        autostart_label.grid(column=0, row=2, padx=8, pady=(0, 8), sticky="w")
+        self.autostart_var = tk.BooleanVar(value=self.settings.autostart_enabled)
+        autostart_checkbox = ttk.Checkbutton(self.window, variable=self.autostart_var)
+        autostart_checkbox.grid(column=1, row=2, padx=8, pady=(0, 8), sticky="w")
+
         save_button = ttk.Button(self.window, text="Speichern", command=self._save)
-        save_button.grid(column=0, row=2, padx=8, pady=12, columnspan=3)
+        save_button.grid(column=0, row=3, padx=8, pady=12, columnspan=3)
 
     def _select_folder(self) -> None:
         folder = filedialog.askdirectory(initialdir=self.settings.folder)
@@ -143,6 +160,18 @@ class SettingsWindow:
 
         self.settings.interval_seconds = interval
         self.settings.folder = folder
+        autostart_requested = self.autostart_var.get()
+
+        try:
+            if autostart_requested:
+                self.autostart_manager.enable()
+            else:
+                self.autostart_manager.disable()
+            self.settings.autostart_enabled = autostart_requested
+        except AutostartError as exc:
+            messagebox.showerror("Autostart", str(exc))
+            return
+
         self.settings.save()
         self.service.refresh_images()
         messagebox.showinfo("Gespeichert", "Einstellungen übernommen.")
