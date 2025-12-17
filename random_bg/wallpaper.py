@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import platform
+import shutil
 import subprocess
 from typing import Callable, Iterable
 
@@ -69,3 +70,55 @@ def iter_images(folder: str) -> Iterable[str]:
         path = os.path.join(folder, entry)
         if os.path.isfile(path) and os.path.splitext(entry)[1].lower() in supported_extensions:
             yield path
+
+
+def _windows_screensaver_active() -> bool:
+    import ctypes
+
+    active = ctypes.c_int()
+    # SPI_GETSCREENSAVERRUNNING = 114
+    result = ctypes.windll.user32.SystemParametersInfoW(114, 0, ctypes.byref(active), 0)
+    return bool(result and active.value)
+
+
+def _macos_screensaver_active() -> bool:
+    # ScreenSaverEngine runs while the macOS screensaver is active
+    try:
+        process = subprocess.run(
+            ["pgrep", "-x", "ScreenSaverEngine"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        return False
+    return process.returncode == 0
+
+
+def _linux_screensaver_active() -> bool:
+    command = shutil.which("gnome-screensaver-command")
+    if not command:
+        return False
+
+    try:
+        process = subprocess.run(
+            [command, "--query"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (FileNotFoundError, OSError):
+        return False
+
+    return "is active" in process.stdout.lower()
+
+
+def screensaver_active() -> bool:
+    """Best-effort detection of an active screensaver."""
+
+    system = platform.system().lower()
+    if system == "windows":
+        return _windows_screensaver_active()
+    if system == "darwin":
+        return _macos_screensaver_active()
+    return _linux_screensaver_active()
