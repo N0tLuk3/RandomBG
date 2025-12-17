@@ -6,13 +6,14 @@ import sys
 from pathlib import Path
 
 
-def _require_pyinstaller() -> "PyInstaller.__main__":
+def _require_pyinstaller() -> "PyInstaller":
     try:
+        import PyInstaller  # type: ignore
         import PyInstaller.__main__  # type: ignore
     except ImportError as exc:  # pragma: no cover - runtime guard
         print("PyInstaller ist nicht installiert. Bitte zuerst `pip install pyinstaller` ausführen.")
         raise SystemExit(1) from exc
-    return PyInstaller.__main__
+    return PyInstaller
 
 
 def main() -> None:
@@ -36,7 +37,7 @@ def main() -> None:
         str(entry_point),
     ]
 
-    pyinstaller.run(args)
+    pyinstaller.__main__.run(args)
 
     artifact = project_root / "dist" / (name + (".exe" if os.name == "nt" else ""))
     print(f"Fertige Datei: {artifact}")

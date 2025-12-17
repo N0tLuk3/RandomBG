@@ -82,8 +82,10 @@ class AutostartManager:
         if not self._windows_shortcut.parent.exists():
             self._windows_shortcut.parent.mkdir(parents=True, exist_ok=True)
 
+        # Use Windows-native quoting to avoid the single quotes that ``shlex.quote``
+        # would add on paths containing spaces (e.g. under ``Program Files``).
         quoted = subprocess.list2cmdline(command)
-        content = f"@echo off\nstart \"\" {quoted}\n"
+        content = f"@echo off\r\nstart \"\" {quoted}\r\n"
         self._windows_shortcut.write_text(content, encoding="utf-8")
 
     def _enable_linux(self, command: List[str]) -> None:
