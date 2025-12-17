@@ -1,6 +1,6 @@
 # RandomBG
 
-Python-Tray-App, die den Desktop-Hintergrund in einem festen Zeitintervall wechselt.
+Python-Tray-App, die den Desktop-Hintergrund automatisch in einem festen oder zufälligen Zeitintervall wechselt.
 
 ## Installation
 
