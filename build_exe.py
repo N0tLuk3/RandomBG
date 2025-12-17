@@ -36,7 +36,7 @@ def main() -> None:
         str(entry_point),
     ]
 
-    pyinstaller.__main__.run(args)
+    pyinstaller.run(args)
 
     artifact = project_root / "dist" / (name + (".exe" if os.name == "nt" else ""))
     print(f"Fertige Datei: {artifact}")
