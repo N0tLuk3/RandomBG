@@ -16,7 +16,7 @@ from tkinter import filedialog, messagebox, ttk
 import tkinter as tk
 
 from .autostart import AutostartError, AutostartManager
-from .wallpaper import iter_images, set_wallpaper
+from .wallpaper import iter_images, screensaver_active, set_wallpaper
 
 CONFIG_FILE = Path.home() / ".random_bg_config.json"
 DEFAULT_INTERVAL = 300
@@ -30,6 +30,9 @@ class Settings:
     folder: str = DEFAULT_FOLDER
     interval_seconds: int = DEFAULT_INTERVAL
     autostart_enabled: bool = False
+    random_mode: bool = False
+    random_min_seconds: int = DEFAULT_RANDOM_MIN
+    random_max_seconds: int = DEFAULT_RANDOM_MAX
 
     @classmethod
     def load(cls) -> "Settings":
@@ -44,6 +47,9 @@ class Settings:
                     folder=data.get("folder", DEFAULT_FOLDER),
                     interval_seconds=int(data.get("interval_seconds", DEFAULT_INTERVAL)),
                     autostart_enabled=bool(data.get("autostart_enabled", autostart_default)),
+                    random_mode=bool(data.get("random_mode", False)),
+                    random_min_seconds=int(data.get("random_min_seconds", DEFAULT_RANDOM_MIN)),
+                    random_max_seconds=int(data.get("random_max_seconds", DEFAULT_RANDOM_MAX)),
                 )
             except (OSError, ValueError):
                 pass
@@ -54,6 +60,9 @@ class Settings:
             "folder": self.folder,
             "interval_seconds": self.interval_seconds,
             "autostart_enabled": self.autostart_enabled,
+            "random_mode": self.random_mode,
+            "random_min_seconds": self.random_min_seconds,
+            "random_max_seconds": self.random_max_seconds,
         }
         with CONFIG_FILE.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2)
@@ -103,11 +112,37 @@ class WallpaperService:
             return random.randint(min_wait, max_wait)
         return max(10, int(self.settings.interval_seconds))
 
+    def _wait_for_screensaver(self) -> bool:
+        while screensaver_active():
+            if self._stop_event.wait(5):
+                return True
+        return False
+
+    def _wait_with_pause(self, wait_time: int) -> bool:
+        elapsed = 0.0
+        step = 1.0
+
+        while elapsed < wait_time:
+            if screensaver_active():
+                if self._wait_for_screensaver():
+                    return True
+                continue
+
+            remaining = min(step, wait_time - elapsed)
+            if self._stop_event.wait(remaining):
+                return True
+            elapsed += remaining
+        return False
+
     def _run(self) -> None:
         while not self._stop_event.is_set():
+            if self._wait_for_screensaver():
+                break
+
             self.next_wallpaper()
             wait_time = self._next_wait()
-            self._stop_event.wait(wait_time)
+            if self._wait_with_pause(wait_time):
+                break
 
 
 class SettingsWindow:
