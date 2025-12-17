@@ -18,6 +18,7 @@ python -m random_bg.app
 
 * Das Tray-Icon erscheint und wechselt die Hintergründe automatisch.
 * Über "Einstellungen" können Ordner, Intervall (Sekunden) und Autostart aktiviert/deaktiviert werden.
+* Optional kann unter Windows das aktuelle Bild als Hintergrund der Microsoft-Edge-Startseite gesetzt werden.
 * "Nächstes Hintergrundbild" setzt sofort das nächste Bild aus dem ausgewählten Ordner.
 * Konfiguration wird in `~/.random_bg_config.json` gespeichert.
 
