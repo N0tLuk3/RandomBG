@@ -29,9 +29,6 @@ DEFAULT_RANDOM_MAX = 600
 class Settings:
     folder: str = DEFAULT_FOLDER
     interval_seconds: int = DEFAULT_INTERVAL
-    random_mode: bool = False
-    random_min_seconds: int = DEFAULT_RANDOM_MIN
-    random_max_seconds: int = DEFAULT_RANDOM_MAX
     autostart_enabled: bool = False
 
     @classmethod
@@ -46,9 +43,6 @@ class Settings:
                 return cls(
                     folder=data.get("folder", DEFAULT_FOLDER),
                     interval_seconds=int(data.get("interval_seconds", DEFAULT_INTERVAL)),
-                    random_mode=bool(data.get("random_mode", False)),
-                    random_min_seconds=int(data.get("random_min_seconds", DEFAULT_RANDOM_MIN)),
-                    random_max_seconds=int(data.get("random_max_seconds", DEFAULT_RANDOM_MAX)),
                     autostart_enabled=bool(data.get("autostart_enabled", autostart_default)),
                 )
             except (OSError, ValueError):
@@ -59,9 +53,6 @@ class Settings:
         payload = {
             "folder": self.folder,
             "interval_seconds": self.interval_seconds,
-            "random_mode": self.random_mode,
-            "random_min_seconds": self.random_min_seconds,
-            "random_max_seconds": self.random_max_seconds,
             "autostart_enabled": self.autostart_enabled,
         }
         with CONFIG_FILE.open("w", encoding="utf-8") as handle:
@@ -176,10 +167,14 @@ class SettingsWindow:
         autostart_checkbox = ttk.Checkbutton(self.window, variable=self.autostart_var)
         autostart_checkbox.grid(column=1, row=5, padx=8, pady=(0, 8), sticky="w")
 
-        save_button = ttk.Button(self.window, text="Speichern", command=self._save)
-        save_button.grid(column=0, row=6, padx=8, pady=12, columnspan=3)
+        autostart_label = ttk.Label(self.window, text="Autostart aktivieren:")
+        autostart_label.grid(column=0, row=2, padx=8, pady=(0, 8), sticky="w")
+        self.autostart_var = tk.BooleanVar(value=self.settings.autostart_enabled)
+        autostart_checkbox = ttk.Checkbutton(self.window, variable=self.autostart_var)
+        autostart_checkbox.grid(column=1, row=2, padx=8, pady=(0, 8), sticky="w")
 
-        self._update_interval_mode()
+        save_button = ttk.Button(self.window, text="Speichern", command=self._save)
+        save_button.grid(column=0, row=3, padx=8, pady=12, columnspan=3)
 
     def _select_folder(self) -> None:
         folder = filedialog.askdirectory(initialdir=self.settings.folder)

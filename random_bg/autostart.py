@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import platform
 import shlex
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -81,7 +82,7 @@ class AutostartManager:
         if not self._windows_shortcut.parent.exists():
             self._windows_shortcut.parent.mkdir(parents=True, exist_ok=True)
 
-        quoted = " ".join(shlex.quote(part) for part in command)
+        quoted = subprocess.list2cmdline(command)
         content = f"@echo off\nstart \"\" {quoted}\n"
         self._windows_shortcut.write_text(content, encoding="utf-8")
 
