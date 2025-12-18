@@ -18,8 +18,6 @@ def _bootstrap_package() -> None:
 
     global __package__, __spec__
 
-    package_name = "random_bg"
-
     base_candidates = [
         Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
         Path(__file__).resolve().parent.parent,  # repo/package root when run from source
