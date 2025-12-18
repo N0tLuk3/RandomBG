@@ -9,6 +9,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
 
+if __name__ == "__main__" and __package__ is None:
+    # Allow running the module directly via `python random_bg/app.py`.
+    # When executed this way, relative imports would fail because there is no
+    # package context. Ensure the repository root is on sys.path and set the
+    # package name so the subsequent relative imports resolve correctly.
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    __package__ = "random_bg"
+
 import pystray
 from PIL import Image, ImageDraw
 from pystray import MenuItem
@@ -16,7 +26,11 @@ from tkinter import filedialog, messagebox, ttk
 import tkinter as tk
 
 from .autostart import AutostartError, AutostartManager
-from .wallpaper import iter_images, screensaver_active, set_wallpaper
+from .wallpaper import (
+    iter_images,
+    screensaver_active,
+    set_wallpaper,
+)
 
 CONFIG_FILE = Path.home() / ".random_bg_config.json"
 DEFAULT_INTERVAL = 300
@@ -33,6 +47,7 @@ class Settings:
     random_mode: bool = False
     random_min_seconds: int = DEFAULT_RANDOM_MIN
     random_max_seconds: int = DEFAULT_RANDOM_MAX
+    edge_background_enabled: bool = False
 
     @classmethod
     def load(cls) -> "Settings":
@@ -50,6 +65,7 @@ class Settings:
                     random_mode=bool(data.get("random_mode", False)),
                     random_min_seconds=int(data.get("random_min_seconds", DEFAULT_RANDOM_MIN)),
                     random_max_seconds=int(data.get("random_max_seconds", DEFAULT_RANDOM_MAX)),
+                    edge_background_enabled=bool(data.get("edge_background_enabled", False)),
                 )
             except (OSError, ValueError):
                 pass
@@ -63,6 +79,7 @@ class Settings:
             "random_mode": self.random_mode,
             "random_min_seconds": self.random_min_seconds,
             "random_max_seconds": self.random_max_seconds,
+            "edge_background_enabled": self.edge_background_enabled,
         }
         with CONFIG_FILE.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2)
@@ -92,7 +109,7 @@ class WallpaperService:
     def refresh_images(self) -> None:
         with self._lock:
             self._images = list(iter_images(self.settings.folder))
-            self._index = 0
+            self._index = -1
 
     def next_wallpaper(self) -> None:
         with self._lock:
@@ -100,9 +117,14 @@ class WallpaperService:
                 self.refresh_images()
             if not self._images:
                 return
-            self._index = (self._index + 1) % len(self._images)
+            next_index = self._index + 1
+            if next_index >= len(self._images):
+                random.shuffle(self._images)
+                self._index = 0
+            else:
+                self._index = next_index
             image_path = self._images[self._index]
-        set_wallpaper(image_path)
+        set_wallpaper(image_path, sync_edge=self.settings.edge_background_enabled)
 
     def _next_wait(self) -> int:
         min_wait = max(10, int(self.settings.random_min_seconds))
@@ -202,14 +224,14 @@ class SettingsWindow:
         autostart_checkbox = ttk.Checkbutton(self.window, variable=self.autostart_var)
         autostart_checkbox.grid(column=1, row=5, padx=8, pady=(0, 8), sticky="w")
 
-        autostart_label = ttk.Label(self.window, text="Autostart aktivieren:")
-        autostart_label.grid(column=0, row=2, padx=8, pady=(0, 8), sticky="w")
-        self.autostart_var = tk.BooleanVar(value=self.settings.autostart_enabled)
-        autostart_checkbox = ttk.Checkbutton(self.window, variable=self.autostart_var)
-        autostart_checkbox.grid(column=1, row=2, padx=8, pady=(0, 8), sticky="w")
+        edge_label = ttk.Label(self.window, text="Edge-Hintergrund setzen:")
+        edge_label.grid(column=0, row=6, padx=8, pady=(0, 8), sticky="w")
+        self.edge_background_var = tk.BooleanVar(value=self.settings.edge_background_enabled)
+        edge_checkbox = ttk.Checkbutton(self.window, variable=self.edge_background_var)
+        edge_checkbox.grid(column=1, row=6, padx=8, pady=(0, 8), sticky="w")
 
         save_button = ttk.Button(self.window, text="Speichern", command=self._save)
-        save_button.grid(column=0, row=3, padx=8, pady=12, columnspan=3)
+        save_button.grid(column=0, row=7, padx=8, pady=12, columnspan=3)
 
     def _select_folder(self) -> None:
         folder = filedialog.askdirectory(initialdir=self.settings.folder)
@@ -270,6 +292,7 @@ class SettingsWindow:
         self.settings.random_max_seconds = random_max
         self.settings.folder = folder
         autostart_requested = self.autostart_var.get()
+        edge_background_enabled = self.edge_background_var.get()
 
         try:
             if autostart_requested:
@@ -281,6 +304,7 @@ class SettingsWindow:
             messagebox.showerror("Autostart", str(exc))
             return
 
+        self.settings.edge_background_enabled = edge_background_enabled
         self.settings.save()
         self.service.refresh_images()
         messagebox.showinfo("Gespeichert", "Einstellungen übernommen.")
