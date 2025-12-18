@@ -9,14 +9,32 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
+from importlib import util as importlib_util
 
-base_path = Path(getattr(sys, "_MEIPASS")) if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent
 
-# Ensure the package can always be resolved, regardless of how the script is started.
-if str(base_path) not in sys.path:
-    sys.path.insert(0, str(base_path))
-if not __package__:
-    __package__ = "random_bg"
+def _bootstrap_package() -> None:
+    """Ensure ``random_bg`` can be imported in frozen and script contexts."""
+
+    base_candidates = [
+        Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
+        Path(__file__).resolve().parent.parent,  # repo/package root when run from source
+        Path(sys.executable).resolve().parent,  # directory of the running executable
+    ]
+
+    for candidate in base_candidates:
+        try:
+            candidate_path = str(candidate)
+        except TypeError:
+            continue
+        if candidate_path and candidate_path not in sys.path:
+            sys.path.insert(0, candidate_path)
+
+    if not __package__:
+        __package__ = "random_bg"
+        __spec__ = importlib_util.spec_from_loader(__package__, loader=None)  # type: ignore[name-defined]
+
+
+_bootstrap_package()
 
 import pystray
 from PIL import Image, ImageDraw
