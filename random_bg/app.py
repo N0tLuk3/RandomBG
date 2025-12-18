@@ -15,6 +15,8 @@ from importlib import util as importlib_util
 def _bootstrap_package() -> None:
     """Ensure ``random_bg`` can be imported in frozen and script contexts."""
 
+    global __package__, __spec__
+
     base_candidates = [
         Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
         Path(__file__).resolve().parent.parent,  # repo/package root when run from source
