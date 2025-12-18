@@ -20,8 +20,10 @@ def _bootstrap_package() -> None:
 
     base_candidates = [
         Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
-        Path(__file__).resolve().parent.parent,  # repo/package root when run from source
+        repo_root,  # repo/package root when run from source
         Path(sys.executable).resolve().parent,  # directory of the running executable
+        package_dir,
+        repo_root / package_name,
     ]
 
     for candidate in base_candidates:
