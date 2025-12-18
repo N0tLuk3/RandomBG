@@ -9,6 +9,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
 
+if __name__ == "__main__" and __package__ is None:
+    # Allow running the module directly via `python random_bg/app.py`.
+    # When executed this way, relative imports would fail because there is no
+    # package context. Ensure the repository root is on sys.path and set the
+    # package name so the subsequent relative imports resolve correctly.
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    __package__ = "random_bg"
+
 import pystray
 from PIL import Image, ImageDraw
 from pystray import MenuItem
