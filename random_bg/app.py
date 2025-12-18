@@ -18,8 +18,6 @@ def _bootstrap_package() -> None:
 
     global __package__, __spec__
 
-    package_name = "random_bg"
-
     base_candidates = [
         Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
         Path(__file__).resolve().parent.parent,  # repo/package root when run from source
@@ -40,15 +38,7 @@ def _bootstrap_package() -> None:
 
     if package_name not in sys.modules:
         module = ModuleType(package_name)
-        package_paths = [Path(__file__).resolve().parent]
-
-        try:
-            meipass = Path(getattr(sys, "_MEIPASS"))
-            package_paths.append(meipass / package_name)
-        except (AttributeError, TypeError):
-            pass
-
-        module.__path__ = [str(path) for path in package_paths if path.exists()]
+        module.__path__ = [str(Path(__file__).resolve().parent)]
         sys.modules[package_name] = module
 
 
