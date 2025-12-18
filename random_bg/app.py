@@ -9,7 +9,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
 
-import sys
+if __name__ == "__main__" and not __package__:
+    # Allow running the module directly via `python random_bg/app.py` or from
+    # a PyInstaller-bundled executable where ``__package__`` can be ``""``.
+    # When executed this way, relative imports would fail because there is no
+    # package context. Ensure the repository root is on sys.path and set the
+    # package name so the subsequent relative imports resolve correctly.
+    import sys
 
 if getattr(sys, "frozen", False):
     base_path = Path(getattr(sys, "_MEIPASS"))
