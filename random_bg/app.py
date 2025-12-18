@@ -10,10 +10,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
 from importlib import util as importlib_util
+from types import ModuleType
 
 
 def _bootstrap_package() -> None:
     """Ensure ``random_bg`` can be imported in frozen and script contexts."""
+
+    global __package__, __spec__
+
+    package_name = "random_bg"
 
     base_candidates = [
         Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
@@ -30,8 +35,21 @@ def _bootstrap_package() -> None:
             sys.path.insert(0, candidate_path)
 
     if not __package__:
-        __package__ = "random_bg"
+        __package__ = package_name
         __spec__ = importlib_util.spec_from_loader(__package__, loader=None)  # type: ignore[name-defined]
+
+    if package_name not in sys.modules:
+        module = ModuleType(package_name)
+        package_paths = [Path(__file__).resolve().parent]
+
+        try:
+            meipass = Path(getattr(sys, "_MEIPASS"))
+            package_paths.append(meipass / package_name)
+        except (AttributeError, TypeError):
+            pass
+
+        module.__path__ = [str(path) for path in package_paths if path.exists()]
+        sys.modules[package_name] = module
 
 
 _bootstrap_package()
