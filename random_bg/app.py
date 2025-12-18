@@ -13,13 +13,24 @@ from importlib import util as importlib_util
 from types import ModuleType
 
 
+# Define package metadata up-front so the bootstrap logic can reference them.
+package_name = "random_bg"
+_current_dir = Path(__file__).resolve().parent
+_embedded_package = _current_dir / package_name
+package_dir = _embedded_package if _embedded_package.exists() else _current_dir
+repo_root = package_dir.parent if package_dir.name == package_name else _current_dir
+
+
 def _bootstrap_package() -> None:
     """Ensure ``random_bg`` can be imported in frozen and script contexts."""
 
     global __package__, __spec__
 
+    meipass = getattr(sys, "_MEIPASS", None)
+
     base_candidates = [
-        Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
+        Path(meipass) / package_name if meipass else None,  # PyInstaller extraction dir
+        Path(meipass) if meipass else None,
         repo_root,  # repo/package root when run from source
         Path(sys.executable).resolve().parent,  # directory of the running executable
         package_dir,
@@ -27,6 +38,8 @@ def _bootstrap_package() -> None:
     ]
 
     for candidate in base_candidates:
+        if candidate is None:
+            continue
         try:
             candidate_path = str(candidate)
         except TypeError:
@@ -40,7 +53,7 @@ def _bootstrap_package() -> None:
 
     if package_name not in sys.modules:
         module = ModuleType(package_name)
-        module.__path__ = [str(Path(__file__).resolve().parent)]
+        module.__path__ = [str(package_dir)]
         sys.modules[package_name] = module
 
 
