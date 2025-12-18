@@ -4,33 +4,18 @@ from __future__ import annotations
 import json
 import os
 import random
+import sys
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
 
-if __name__ == "__main__" and not __package__:
-    # Allow running the module directly via `python random_bg/app.py` or from
-    # a PyInstaller-bundled executable where ``__package__`` can be ``""``.
-    # When executed this way, relative imports would fail because there is no
-    # package context. Ensure the repository root is on sys.path and set the
-    # package name so the subsequent relative imports resolve correctly.
-    import sys
+base_path = Path(getattr(sys, "_MEIPASS")) if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent
 
-if getattr(sys, "frozen", False):
-    base_path = Path(getattr(sys, "_MEIPASS"))
-else:
-    base_path = Path(__file__).resolve().parent.parent
-
+# Ensure the package can always be resolved, regardless of how the script is started.
 if str(base_path) not in sys.path:
     sys.path.insert(0, str(base_path))
-
-if __name__ == "__main__" and not __package__:
-    # Allow running the module directly via `python random_bg/app.py` or from
-    # a PyInstaller-bundled executable where ``__package__`` can be ``""``.
-    # When executed this way, relative imports would fail because there is no
-    # package context. Ensure the repository root is on sys.path and set the
-    # package name so the subsequent relative imports resolve correctly.
+if not __package__:
     __package__ = "random_bg"
 
 import pystray
