@@ -99,7 +99,7 @@ class WallpaperService:
     def refresh_images(self) -> None:
         with self._lock:
             self._images = list(iter_images(self.settings.folder))
-            self._index = 0
+            self._index = -1
 
     def next_wallpaper(self) -> None:
         with self._lock:
@@ -107,7 +107,12 @@ class WallpaperService:
                 self.refresh_images()
             if not self._images:
                 return
-            self._index = (self._index + 1) % len(self._images)
+            next_index = self._index + 1
+            if next_index >= len(self._images):
+                random.shuffle(self._images)
+                self._index = 0
+            else:
+                self._index = next_index
             image_path = self._images[self._index]
         set_wallpaper(image_path, sync_edge=self.settings.edge_background_enabled)
 

@@ -1,8 +1,10 @@
 """Wallpaper utilities for cross-platform background changes."""
 from __future__ import annotations
 
+import json
 import os
 import platform
+import random
 import shutil
 import subprocess
 import json
@@ -113,17 +115,68 @@ def set_edge_background(image_path: str) -> None:
         return
 
 
-def iter_images(folder: str) -> Iterable[str]:
-    """Yield image file paths from a folder."""
+def set_edge_background(image_path: str) -> None:
+    """Best-effort sync of the Microsoft Edge New Tab background with the wallpaper.
+
+    Only has an effect on Windows installations with a default Edge profile. The
+    function updates the `Preferences` JSON file so that Edge uses the provided
+    image as custom New Tab background. Failures are silently ignored.
+    """
+
+    if platform.system().lower() != "windows":
+        return
+
+    local_app_data = os.getenv("LOCALAPPDATA")
+    if not local_app_data:
+        return
+
+    prefs_path = Path(local_app_data) / "Microsoft" / "Edge" / "User Data" / "Default" / "Preferences"
+    if not prefs_path.exists():
+        return
+
+    try:
+        with prefs_path.open("r", encoding="utf-8") as handle:
+            prefs = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return
+
+    image_full_path = Path(image_path).resolve()
+    background_dict = prefs.get("ntp_custom_background_dict", {})
+    background_dict.update(
+        {
+            "background_url": "",
+            "collection_id": "",
+            "custom_background_local_to_drive": False,
+            "local_background_image_file_url": image_full_path.as_uri(),
+            "local_background_image_path": str(image_full_path),
+        }
+    )
+    prefs["ntp_custom_background_dict"] = background_dict
+    prefs["ntp_custom_background_enabled"] = True
+    prefs["ntp_custom_background_set_by_admin"] = False
+
+    try:
+        with prefs_path.open("w", encoding="utf-8") as handle:
+            json.dump(prefs, handle, indent=2)
+    except OSError:
+        return
+
+
+def iter_images(folder: str) -> List[str]:
+    """Return image file paths from a folder in randomized order."""
 
     if not os.path.isdir(folder):
         return []
 
     supported_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".gif"}
-    for entry in sorted(os.listdir(folder)):
-        path = os.path.join(folder, entry)
-        if os.path.isfile(path) and os.path.splitext(entry)[1].lower() in supported_extensions:
-            yield path
+    images = [
+        os.path.join(folder, entry)
+        for entry in os.listdir(folder)
+        if os.path.isfile(os.path.join(folder, entry))
+        and os.path.splitext(entry)[1].lower() in supported_extensions
+    ]
+    random.shuffle(images)
+    return images
 
 
 def _windows_screensaver_active() -> bool:
