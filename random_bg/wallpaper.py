@@ -7,9 +7,8 @@ import platform
 import random
 import shutil
 import subprocess
-import json
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable, Iterable, List
 
 SPI_SETDESKWALLPAPER = 20
 

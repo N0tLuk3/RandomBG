@@ -4,9 +4,13 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import PyInstaller as PyInstallerModule  # type: ignore
 
 
-def _require_pyinstaller() -> "PyInstaller":
+def _require_pyinstaller() -> "PyInstallerModule":
     try:
         import PyInstaller  # type: ignore
         import PyInstaller.__main__  # type: ignore
