@@ -16,7 +16,12 @@ if __name__ == "__main__" and __package__ is None:
     # package name so the subsequent relative imports resolve correctly.
     import sys
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    if getattr(sys, "frozen", False):
+        base_path = Path(getattr(sys, "_MEIPASS"))
+    else:
+        base_path = Path(__file__).resolve().parent.parent
+
+    sys.path.insert(0, str(base_path))
     __package__ = "random_bg"
 
 import pystray
