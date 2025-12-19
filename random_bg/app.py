@@ -32,9 +32,8 @@ def _bootstrap_package() -> None:
         Path(meipass) / package_name if meipass else None,  # PyInstaller extraction dir
         Path(meipass) if meipass else None,
         repo_root,  # repo/package root when run from source
+        package_dir.parent if package_dir.name == package_name else None,
         Path(sys.executable).resolve().parent,  # directory of the running executable
-        package_dir,
-        repo_root / package_name,
     ]
 
     for candidate in base_candidates:
