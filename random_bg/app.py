@@ -9,54 +9,16 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
-from importlib import util as importlib_util
-from types import ModuleType
 
+if __package__ in (None, ""):
+    # Allow ``python random_bg/app.py`` to work by adding the repo root to sys.path.
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    __package__ = "random_bg"
 
-# Define package metadata up-front so the bootstrap logic can reference them.
-package_name = "random_bg"
-_current_dir = Path(__file__).resolve().parent
-_embedded_package = _current_dir / package_name
-package_dir = _embedded_package if _embedded_package.exists() else _current_dir
-repo_root = package_dir.parent if package_dir.name == package_name else _current_dir
+from .runtime import freeze_support_if_needed, prepare_sys_path
 
-
-def _bootstrap_package() -> None:
-    """Ensure ``random_bg`` can be imported in frozen and script contexts."""
-
-    global __package__, __spec__
-
-    meipass = getattr(sys, "_MEIPASS", None)
-
-    base_candidates = [
-        Path(meipass) / package_name if meipass else None,  # PyInstaller extraction dir
-        Path(meipass) if meipass else None,
-        repo_root,  # repo/package root when run from source
-        package_dir.parent if package_dir.name == package_name else None,
-        Path(sys.executable).resolve().parent,  # directory of the running executable
-    ]
-
-    for candidate in base_candidates:
-        if candidate is None:
-            continue
-        try:
-            candidate_path = str(candidate)
-        except TypeError:
-            continue
-        if candidate_path and candidate_path not in sys.path:
-            sys.path.insert(0, candidate_path)
-
-    if not __package__:
-        __package__ = package_name
-        __spec__ = importlib_util.spec_from_loader(__package__, loader=None)  # type: ignore[name-defined]
-
-    if package_name not in sys.modules:
-        module = ModuleType(package_name)
-        module.__path__ = [str(package_dir)]
-        sys.modules[package_name] = module
-
-
-_bootstrap_package()
+prepare_sys_path()
+freeze_support_if_needed()
 
 import pystray
 from PIL import Image, ImageDraw
