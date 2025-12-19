@@ -13,20 +13,53 @@ from importlib import util as importlib_util
 from types import ModuleType
 
 
+# Define package metadata up-front so the bootstrap logic can reference them.
+package_name = "random_bg"
+_current_dir = Path(__file__).resolve().parent
+
+
+def _detect_package_dir() -> Path:
+    """Find the directory that actually holds our modules in frozen and source runs."""
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    candidates = [
+        _current_dir,
+        _current_dir / package_name,
+        Path(meipass) / package_name if meipass else None,
+        Path(meipass) if meipass else None,
+    ]
+
+    for candidate in candidates:
+        if not candidate:
+            continue
+        if (candidate / "autostart.py").exists():
+            return candidate
+    return _current_dir
+
+
+package_dir = _detect_package_dir()
+repo_root = package_dir.parent if package_dir.name == package_name else _current_dir
+
+
 def _bootstrap_package() -> None:
     """Ensure ``random_bg`` can be imported in frozen and script contexts."""
 
     global __package__, __spec__
 
+    meipass = getattr(sys, "_MEIPASS", None)
+
     base_candidates = [
-        Path(getattr(sys, "_MEIPASS")),  # PyInstaller extraction dir
-        repo_root,  # repo/package root when run from source
-        Path(sys.executable).resolve().parent,  # directory of the running executable
+        Path(meipass) / package_name if meipass else None,  # PyInstaller extraction dir
+        Path(meipass) if meipass else None,
         package_dir,
-        repo_root / package_name,
+        repo_root,  # repo/package root when run from source
+        package_dir.parent if package_dir.name == package_name else None,
+        Path(sys.executable).resolve().parent,  # directory of the running executable
     ]
 
     for candidate in base_candidates:
+        if candidate is None:
+            continue
         try:
             candidate_path = str(candidate)
         except TypeError:
@@ -40,7 +73,7 @@ def _bootstrap_package() -> None:
 
     if package_name not in sys.modules:
         module = ModuleType(package_name)
-        module.__path__ = [str(Path(__file__).resolve().parent)]
+        module.__path__ = [str(package_dir)]
         sys.modules[package_name] = module
 
 
