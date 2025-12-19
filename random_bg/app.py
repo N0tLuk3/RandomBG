@@ -16,28 +16,8 @@ from types import ModuleType
 # Define package metadata up-front so the bootstrap logic can reference them.
 package_name = "random_bg"
 _current_dir = Path(__file__).resolve().parent
-
-
-def _detect_package_dir() -> Path:
-    """Find the directory that actually holds our modules in frozen and source runs."""
-
-    meipass = getattr(sys, "_MEIPASS", None)
-    candidates = [
-        _current_dir,
-        _current_dir / package_name,
-        Path(meipass) / package_name if meipass else None,
-        Path(meipass) if meipass else None,
-    ]
-
-    for candidate in candidates:
-        if not candidate:
-            continue
-        if (candidate / "autostart.py").exists():
-            return candidate
-    return _current_dir
-
-
-package_dir = _detect_package_dir()
+_embedded_package = _current_dir / package_name
+package_dir = _embedded_package if _embedded_package.exists() else _current_dir
 repo_root = package_dir.parent if package_dir.name == package_name else _current_dir
 
 
@@ -51,7 +31,6 @@ def _bootstrap_package() -> None:
     base_candidates = [
         Path(meipass) / package_name if meipass else None,  # PyInstaller extraction dir
         Path(meipass) if meipass else None,
-        package_dir,
         repo_root,  # repo/package root when run from source
         package_dir.parent if package_dir.name == package_name else None,
         Path(sys.executable).resolve().parent,  # directory of the running executable
