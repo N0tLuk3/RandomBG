@@ -31,6 +31,15 @@ def main() -> None:
         raise SystemExit(f"Einstiegsdatei nicht gefunden: {entry_point}")
 
     name = "RandomBG"
+    hidden_imports = [
+        # pystray selects a backend dynamically; ensure all candidates are bundled.
+        "pystray._win32",
+        "pystray._gtk",
+        "pystray._xorg",
+        # Pillow locates tkinter at runtime; keep the helper module in the bundle.
+        "PIL._tkinter_finder",
+    ]
+
     args = [
         "--name",
         name,
@@ -38,8 +47,12 @@ def main() -> None:
         "--noconsole",
         "--onefile",
         "--clean",
-        str(entry_point),
     ]
+
+    for hidden in hidden_imports:
+        args.extend(["--hidden-import", hidden])
+
+    args.append(str(entry_point))
 
     pyinstaller.__main__.run(args)
 
