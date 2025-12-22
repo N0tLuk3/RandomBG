@@ -20,6 +20,8 @@ from .runtime import freeze_support_if_needed, prepare_sys_path
 prepare_sys_path()
 freeze_support_if_needed()
 
+BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+
 import pystray
 from PIL import Image, ImageDraw
 from pystray import MenuItem
@@ -48,7 +50,10 @@ class Settings:
     random_mode: bool = False
     random_min_seconds: int = DEFAULT_RANDOM_MIN
     random_max_seconds: int = DEFAULT_RANDOM_MAX
+    windows_background_enabled: bool = True
     edge_background_enabled: bool = False
+    chrome_background_enabled: bool = False
+    firefox_background_enabled: bool = False
 
     @classmethod
     def load(cls) -> "Settings":
@@ -66,7 +71,10 @@ class Settings:
                     random_mode=bool(data.get("random_mode", False)),
                     random_min_seconds=int(data.get("random_min_seconds", DEFAULT_RANDOM_MIN)),
                     random_max_seconds=int(data.get("random_max_seconds", DEFAULT_RANDOM_MAX)),
+                    windows_background_enabled=bool(data.get("windows_background_enabled", True)),
                     edge_background_enabled=bool(data.get("edge_background_enabled", False)),
+                    chrome_background_enabled=bool(data.get("chrome_background_enabled", False)),
+                    firefox_background_enabled=bool(data.get("firefox_background_enabled", False)),
                 )
             except (OSError, ValueError):
                 pass
@@ -80,7 +88,10 @@ class Settings:
             "random_mode": self.random_mode,
             "random_min_seconds": self.random_min_seconds,
             "random_max_seconds": self.random_max_seconds,
+            "windows_background_enabled": self.windows_background_enabled,
             "edge_background_enabled": self.edge_background_enabled,
+            "chrome_background_enabled": self.chrome_background_enabled,
+            "firefox_background_enabled": self.firefox_background_enabled,
         }
         with CONFIG_FILE.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2)
@@ -125,7 +136,13 @@ class WallpaperService:
             else:
                 self._index = next_index
             image_path = self._images[self._index]
-        set_wallpaper(image_path, sync_edge=self.settings.edge_background_enabled)
+        set_wallpaper(
+            image_path,
+            apply_wallpaper=self.settings.windows_background_enabled,
+            sync_edge=self.settings.edge_background_enabled,
+            sync_chrome=self.settings.chrome_background_enabled,
+            sync_firefox=self.settings.firefox_background_enabled,
+        )
 
     def _next_wait(self) -> int:
         min_wait = max(10, int(self.settings.random_min_seconds))
@@ -225,14 +242,32 @@ class SettingsWindow:
         autostart_checkbox = ttk.Checkbutton(self.window, variable=self.autostart_var)
         autostart_checkbox.grid(column=1, row=5, padx=8, pady=(0, 8), sticky="w")
 
+        windows_wall_label = ttk.Label(self.window, text="Windows-Hintergrund setzen:")
+        windows_wall_label.grid(column=0, row=6, padx=8, pady=(0, 4), sticky="w")
+        self.windows_background_var = tk.BooleanVar(value=self.settings.windows_background_enabled)
+        windows_wall_checkbox = ttk.Checkbutton(self.window, variable=self.windows_background_var)
+        windows_wall_checkbox.grid(column=1, row=6, padx=8, pady=(0, 4), sticky="w")
+
         edge_label = ttk.Label(self.window, text="Edge-Hintergrund setzen:")
-        edge_label.grid(column=0, row=6, padx=8, pady=(0, 8), sticky="w")
+        edge_label.grid(column=0, row=7, padx=8, pady=(0, 4), sticky="w")
         self.edge_background_var = tk.BooleanVar(value=self.settings.edge_background_enabled)
         edge_checkbox = ttk.Checkbutton(self.window, variable=self.edge_background_var)
-        edge_checkbox.grid(column=1, row=6, padx=8, pady=(0, 8), sticky="w")
+        edge_checkbox.grid(column=1, row=7, padx=8, pady=(0, 4), sticky="w")
+
+        chrome_label = ttk.Label(self.window, text="Chrome-Hintergrund setzen:")
+        chrome_label.grid(column=0, row=8, padx=8, pady=(0, 4), sticky="w")
+        self.chrome_background_var = tk.BooleanVar(value=self.settings.chrome_background_enabled)
+        chrome_checkbox = ttk.Checkbutton(self.window, variable=self.chrome_background_var)
+        chrome_checkbox.grid(column=1, row=8, padx=8, pady=(0, 4), sticky="w")
+
+        firefox_label = ttk.Label(self.window, text="Firefox-Hintergrund setzen:")
+        firefox_label.grid(column=0, row=9, padx=8, pady=(0, 8), sticky="w")
+        self.firefox_background_var = tk.BooleanVar(value=self.settings.firefox_background_enabled)
+        firefox_checkbox = ttk.Checkbutton(self.window, variable=self.firefox_background_var)
+        firefox_checkbox.grid(column=1, row=9, padx=8, pady=(0, 8), sticky="w")
 
         save_button = ttk.Button(self.window, text="Speichern", command=self._save)
-        save_button.grid(column=0, row=7, padx=8, pady=12, columnspan=3)
+        save_button.grid(column=0, row=10, padx=8, pady=12, columnspan=3)
 
     def _select_folder(self) -> None:
         folder = filedialog.askdirectory(initialdir=self.settings.folder)
@@ -293,7 +328,10 @@ class SettingsWindow:
         self.settings.random_max_seconds = random_max
         self.settings.folder = folder
         autostart_requested = self.autostart_var.get()
+        windows_background_enabled = self.windows_background_var.get()
         edge_background_enabled = self.edge_background_var.get()
+        chrome_background_enabled = self.chrome_background_var.get()
+        firefox_background_enabled = self.firefox_background_var.get()
 
         try:
             if autostart_requested:
@@ -305,7 +343,10 @@ class SettingsWindow:
             messagebox.showerror("Autostart", str(exc))
             return
 
+        self.settings.windows_background_enabled = windows_background_enabled
         self.settings.edge_background_enabled = edge_background_enabled
+        self.settings.chrome_background_enabled = chrome_background_enabled
+        self.settings.firefox_background_enabled = firefox_background_enabled
         self.settings.save()
         self.service.refresh_images()
         messagebox.showinfo("Gespeichert", "Einstellungen übernommen.")
@@ -314,6 +355,17 @@ class SettingsWindow:
 
 
 def _create_icon() -> Image.Image:
+    icon_path = BASE_DIR / "logo.png"
+
+    if icon_path.exists():
+        try:
+            with Image.open(icon_path) as loaded:
+                icon_img = loaded.convert("RGBA")
+            icon_img.thumbnail((64, 64), Image.LANCZOS)
+            return icon_img
+        except OSError:
+            pass
+
     img = Image.new("RGB", (64, 64), "white")
     draw = ImageDraw.Draw(img)
     draw.rectangle([(8, 8), (56, 56)], outline="black", width=2)
@@ -339,10 +391,13 @@ def run_tray() -> None:
     def on_next() -> None:
         service.next_wallpaper()
 
-    def on_quit(icon: Any, _item: object) -> None:
-        service.stop()
-        icon.stop()
-        root.quit()
+    def on_quit(tray_icon: Any, _item: object) -> None:
+        def shutdown() -> None:
+            service.stop()
+            tray_icon.stop()
+            root.quit()
+
+        root.after(0, shutdown)
 
     menu = (
         MenuItem("Einstellungen", lambda icon, item: on_settings()),
