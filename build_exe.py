@@ -18,46 +18,6 @@ def _require_pyinstaller() -> "PyInstallerModule":
         raise SystemExit(1) from exc
     return PyInstaller
 
-def _resolve_icon(project_root: Path) -> Path | None:
-    """Return the icon path for PyInstaller or None if unavailable.
-
-    Preference order:
-    1. Existing ICO in the project root (logo.ico).
-    2. Existing ICO in a local build/ folder.
-    3. Convert the bundled logo.png into build/logo.ico on the fly.
-    """
-
-    candidates = [
-        project_root / "logo.ico",
-        project_root / "build" / "logo.ico",
-    ]
-
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-
-    png_source = project_root / "logo.png"
-    if not png_source.exists():
-        return None
-
-    try:
-        from PIL import Image
-    except ImportError:  # pragma: no cover - runtime guard
-        print("Pillow nicht gefunden – Icon wird nicht eingebettet.")
-        return None
-
-    target = project_root / "build" / "logo.ico"
-    target.parent.mkdir(parents=True, exist_ok=True)
-
-    try:
-        with Image.open(png_source) as img:
-            img.save(target)
-    except Exception as exc:  # pragma: no cover - runtime guard
-        print(f"Icon konnte nicht aus PNG erzeugt werden: {exc}")
-        return None
-
-    return target
-
 
 def _prepare_icon(project_root: Path) -> tuple[Path | None, Path | None]:
     """Return paths to the PNG icon and a converted ICO version (if available)."""
@@ -74,8 +34,10 @@ def _prepare_icon(project_root: Path) -> tuple[Path | None, Path | None]:
     try:
         from PIL import Image  # type: ignore
 
+        sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (24, 24), (16, 16)]
         with Image.open(logo_png) as img:
-            img.save(logo_ico, format="ICO")
+            icon_source = img.convert("RGBA")
+            icon_source.save(logo_ico, format="ICO", sizes=sizes)
     except Exception as exc:  # pragma: no cover - runtime guard
         print(f"Warnung: Icon konnte nicht konvertiert werden ({exc}).")
         logo_ico = None
@@ -91,11 +53,15 @@ def main() -> None:
     entry_point = project_root / "random_bg" / "app.py"
     logo_png, logo_ico = _prepare_icon(project_root)
 
+    if not logo_png:
+        raise SystemExit("logo.png nicht gefunden - Icon kann nicht eingebettet werden.")
+    if not logo_ico:
+        raise SystemExit("Icon konnte nicht aus logo.png erzeugt werden (siehe Meldung oben).")
+
     if not entry_point.exists():  # pragma: no cover - defensive guard
         raise SystemExit(f"Einstiegsdatei nicht gefunden: {entry_point}")
 
     name = "RandomBG"
-    icon = _resolve_icon(project_root)
     hidden_imports = [
         # pystray selects a backend dynamically; ensure all candidates are bundled.
         "pystray._win32",
@@ -128,8 +94,7 @@ def main() -> None:
         data_sep = ";" if os.name == "nt" else ":"
         args.extend(["--add-data", f"{logo_png}{data_sep}."])
 
-    if logo_ico:
-        args.extend(["--icon", str(logo_ico)])
+    args.extend(["--icon", str(logo_ico)])
 
     for hidden in hidden_imports:
         args.extend(["--hidden-import", hidden])
