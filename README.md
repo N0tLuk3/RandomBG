@@ -1,6 +1,8 @@
 # RandomBG
 
-Python-Tray-App, die den Desktop-Hintergrund automatisch in einem festen oder zufälligen Zeitintervall wechselt.
+[Deutsche Version](README/README.de.md)
+
+Python tray app that automatically changes your desktop background on a fixed or random schedule.
 
 ## Installation
 
@@ -10,51 +12,51 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Nutzung
+## Usage
 
 ```bash
 python -m random_bg.app
 ```
 
-* Das Tray-Icon erscheint und wechselt die Hintergründe automatisch.
-* Über "Einstellungen" können Ordner, Intervall (Sekunden) und Autostart aktiviert/deaktiviert werden.
-* Optional kann unter Windows das aktuelle Bild als Hintergrund der Microsoft-Edge-Startseite gesetzt werden.
-* "Nächstes Hintergrundbild" setzt sofort das nächste Bild aus dem ausgewählten Ordner.
-* Konfiguration wird in `~/.random_bg_config.json` gespeichert.
+* The tray icon appears and rotates backgrounds automatically.
+* Under "Settings" you can choose folders, set the interval (seconds), and toggle autostart.
+* On Windows you can optionally set the current image as the Microsoft Edge start page background.
+* "Next background" immediately switches to the next image from the selected folder.
+* Configuration is stored in `~/.random_bg_config.json`.
 
-## Exe unter Windows erstellen
+## Build a Windows executable
 
-Mit dem beiliegenden Build-Skript kannst du eine portable Windows-Exe erzeugen, die ohne installierte Python-Laufzeit läuft:
+Use the included build script to create a portable Windows executable that runs without a separate Python runtime:
 
-1. Installiere PyInstaller im aktiven Python-Environment:
+1. Install PyInstaller in your active Python environment:
 
    ```bash
    pip install pyinstaller
    ```
 
-2. Baue das Exe-Paket (unter Windows ausführen):
+2. Build the executable package (run on Windows):
 
    ```bash
    python build_exe.py
    ```
 
-   Die fertige Datei landet in `dist/RandomBG.exe` und enthält alle Abhängigkeiten.
+   The final file is written to `dist/RandomBG.exe` and bundles all dependencies.
 
-## Im Hintergrund ohne Terminal laufen lassen
+## Run in the background without a terminal
 
-* **Windows:** Verwende `pythonw.exe -m random_bg.app`, damit kein Konsolenfenster geöffnet wird. Das Tray-Icon bleibt trotzdem sichtbar.
-* **Linux/macOS:** Starte die App mit `nohup` oder über einen Prozess-Manager, damit sie weiterläuft, wenn das Terminal geschlossen wird:
+* **Windows:** Use `pythonw.exe -m random_bg.app` so no console window opens; the tray icon stays visible.
+* **Linux/macOS:** Start the app with `nohup` or a process manager so it keeps running after you close the terminal:
 
   ```bash
   nohup python -m random_bg.app >/tmp/randombg.log 2>&1 &
   ```
 
-  Das `nohup`-Kommando trennt den Prozess vom Terminal, die Ausgabe landet in `/tmp/randombg.log`.
+  The `nohup` command detaches the process from the terminal and writes output to `/tmp/randombg.log`.
 
-## Autostart einrichten (systemd, Linux)
+## Set up autostart (systemd, Linux)
 
-1. Passe den `WorkingDirectory` und (falls du ein virtuelles Environment nutzt) die `Environment`-Zeile in `autostart/randombg.service` an.
-2. Kopiere die Datei in dein Benutzer-Systemd-Verzeichnis und lade die Konfiguration neu:
+1. Adjust `WorkingDirectory` and, if you use a virtual environment, the `Environment` line in `autostart/randombg.service`.
+2. Copy the file into your user systemd directory and reload the configuration:
 
    ```bash
    mkdir -p ~/.config/systemd/user
@@ -63,9 +65,9 @@ Mit dem beiliegenden Build-Skript kannst du eine portable Windows-Exe erzeugen, 
    systemctl --user enable --now randombg.service
    ```
 
-3. Nach einem Reboot startet der Tray automatisch; stoppen kannst du ihn mit `systemctl --user stop randombg.service`.
+3. After a reboot, the tray starts automatically; stop it with `systemctl --user stop randombg.service`.
 
-## Autostart unter Windows
+## Autostart on Windows
 
-1. Führe auf dem Zielsystem das PowerShell-Skript `autostart/install-randombg-startup.ps1` aus. Es erstellt im Autostart-Ordner automatisch eine Verknüpfung, die das mitgelieferte `start-randombg-windows.bat` startet (Standard-Pfad: `C:\RandomBG`).
-2. Alternativ kannst du manuell eine Verknüpfung erstellen, die `pythonw.exe -m random_bg.app` ausführt (ggf. den Pfad zu `pythonw.exe`/dem virtuellen Environment anpassen) und diese im Autostart-Ordner ablegen (`shell:startup` im Ausführen-Dialog). Beim nächsten Login startet die App ohne sichtbares Terminal.
+1. Run the PowerShell script `autostart/install-randombg-startup.ps1` on the target system. It creates a shortcut in the Startup folder that launches the bundled `start-randombg-windows.bat` (default path: `C:\\RandomBG`).
+2. Alternatively, manually create a shortcut that runs `pythonw.exe -m random_bg.app` (adjust the path to `pythonw.exe`/your virtual environment if needed) and place it in the Startup folder (`shell:startup` in the Run dialog). At the next login, the app will start without showing a terminal.
