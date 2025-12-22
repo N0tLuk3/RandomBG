@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -20,6 +19,47 @@ def _require_pyinstaller() -> "PyInstallerModule":
     return PyInstaller
 
 
+def _resolve_icon(project_root: Path) -> Path | None:
+    """Return the icon path for PyInstaller or None if unavailable.
+
+    Preference order:
+    1. Existing ICO in the project root (logo.ico).
+    2. Existing ICO in a local build/ folder.
+    3. Convert the bundled logo.png into build/logo.ico on the fly.
+    """
+
+    candidates = [
+        project_root / "logo.ico",
+        project_root / "build" / "logo.ico",
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    png_source = project_root / "logo.png"
+    if not png_source.exists():
+        return None
+
+    try:
+        from PIL import Image
+    except ImportError:  # pragma: no cover - runtime guard
+        print("Pillow nicht gefunden – Icon wird nicht eingebettet.")
+        return None
+
+    target = project_root / "build" / "logo.ico"
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        with Image.open(png_source) as img:
+            img.save(target)
+    except Exception as exc:  # pragma: no cover - runtime guard
+        print(f"Icon konnte nicht aus PNG erzeugt werden: {exc}")
+        return None
+
+    return target
+
+
 def main() -> None:
     """Build a Windows-friendly, one-file executable via PyInstaller."""
 
@@ -31,6 +71,8 @@ def main() -> None:
         raise SystemExit(f"Einstiegsdatei nicht gefunden: {entry_point}")
 
     name = "RandomBG"
+
+    icon = _resolve_icon(project_root)
     hidden_imports = [
         # pystray selects a backend dynamically; ensure all candidates are bundled.
         "pystray._win32",
@@ -48,6 +90,10 @@ def main() -> None:
         "--onefile",
         "--clean",
     ]
+
+    if icon is not None:
+        args.extend(["--icon", str(icon)])
+        print(f"Verwende Icon: {icon}")
 
     for hidden in hidden_imports:
         args.extend(["--hidden-import", hidden])
