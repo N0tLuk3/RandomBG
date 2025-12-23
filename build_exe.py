@@ -3,20 +3,27 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import PyInstaller as PyInstallerModule  # type: ignore
+from typing import Protocol, cast
 
 
-def _require_pyinstaller() -> "PyInstallerModule":
+class PyInstallerMain(Protocol):
+    @staticmethod
+    def run(args: list[str]) -> None:
+        ...
+
+
+class PyInstallerModule(Protocol):
+    __main__: PyInstallerMain
+
+
+def _require_pyinstaller() -> PyInstallerModule:
     try:
         import PyInstaller  # type: ignore
         import PyInstaller.__main__  # type: ignore
     except ImportError as exc:  # pragma: no cover - runtime guard
-        print("PyInstaller ist nicht installiert. Bitte zuerst `pip install pyinstaller` ausführen.")
+        print("PyInstaller ist nicht installiert. Bitte zuerst `pip install pyinstaller` ausfuehren.")
         raise SystemExit(1) from exc
-    return PyInstaller
+    return cast(PyInstallerModule, PyInstaller)
 
 
 def _prepare_icon(project_root: Path) -> tuple[Path | None, Path | None]:
@@ -111,7 +118,7 @@ def main() -> None:
 
     artifact = project_root / "dist" / (name + (".exe" if os.name == "nt" else ""))
     print(f"Fertige Datei: {artifact}")
-    print("Hinweis: Die Erstellung des Windows-Exe-Pakets funktioniert nur auf Windows zuverlässig.")
+    print("Hinweis: Die Erstellung des Windows-Exe-Pakets funktioniert nur auf Windows zuverlaessig.")
 
 
 if __name__ == "__main__":
