@@ -10,6 +10,15 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+### Firefox-Erweiterung installieren
+
+Im Repository liegt `RandomBG-ff-0.1.0.xpi` bereit, das sich lokal in Firefox installieren lässt:
+
+1. Öffne Firefox und rufe **about:addons** auf.
+2. Klicke auf das Zahnrad-Symbol und wähle **Add-on aus Datei installieren…**.
+3. Wähle `RandomBG-ff-0.1.0.xpi` aus dem Projektstamm und bestätige die Installation.
+4. Starte Firefox neu, falls du dazu aufgefordert wirst.
+
 ## Nutzung
 
 ```bash

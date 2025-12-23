@@ -12,6 +12,15 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+### Install the Firefox extension
+
+The repository includes `RandomBG-ff-0.1.0.xpi`, which can be installed locally to integrate with Firefox:
+
+1. Open Firefox and navigate to **about:addons**.
+2. Click the gear icon and choose **Install Add-on From File…**.
+3. Select `RandomBG-ff-0.1.0.xpi` from the project root and confirm the installation.
+4. Restart Firefox if prompted.
+
 ## Usage
 
 ```bash
