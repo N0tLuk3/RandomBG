@@ -1,2 +1,4 @@
 .venv/
 random_bg/__pycache__/
+build/
+dist/

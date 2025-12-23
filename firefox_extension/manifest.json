@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+  "name": "RandomBG New Tab",
+  "version": "0.1.0",
+  "description": "Verwendet ein lokales Bild als New-Tab-Hintergrund.",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "permissions": [
+    "storage",
+    "file://*/*"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "addon@notluke.de",
+      "strict_min_version": "91.0",
+      "data_collection": {
+        "collects_telemetry": false
+      },
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
+}
