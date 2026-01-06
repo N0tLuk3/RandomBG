@@ -1,6 +1,8 @@
 """Wallpaper utilities for cross-platform background changes."""
 from __future__ import annotations
 
+import configparser
+import json
 import os
 import platform
 import random
@@ -8,13 +10,6 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Callable, List
-
-import configparser
-import json
-<<<<<<< HEAD
-=======
-import shutil
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
 
 SPI_SETDESKWALLPAPER = 20
 
@@ -76,7 +71,6 @@ def set_wallpaper(
         to the same image. Ignored on other platforms.
     """
 
-<<<<<<< HEAD
     shared = _write_shared_wallpaper(image_path)
     effective_wallpaper = image_path  # always use the original for the OS
     effective_browser = shared if shared else image_path
@@ -91,18 +85,6 @@ def set_wallpaper(
             set_chrome_background(effective_browser)
         if sync_firefox:
             set_firefox_background(effective_browser)
-=======
-    if apply_wallpaper:
-        handler = _platform_handler()
-        handler(image_path)
-    if platform.system().lower() == "windows":
-        if sync_edge:
-            set_edge_background(image_path)
-        if sync_chrome:
-            set_chrome_background(image_path)
-        if sync_firefox:
-            set_firefox_background(image_path)
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
 
 
 def set_edge_background(image_path: str) -> None:
@@ -182,7 +164,6 @@ def _write_chromium_background(prefs_path: Path, image_path: str) -> None:
         return
 
 
-<<<<<<< HEAD
 def _write_shared_wallpaper(image_path: str) -> Path | None:
     """Write a stable copy of the current image next to the user's folder as randombg_wallpaper.png."""
 
@@ -225,44 +206,6 @@ def set_firefox_background(image_path: str) -> Path | None:
             chosen_css = user_content
 
     return chosen_css
-=======
-def set_firefox_background(image_path: str) -> None:
-    """Best-effort sync of the Firefox new tab background with the wallpaper."""
-
-    profile_dir = _locate_firefox_profile()
-    if not profile_dir:
-        return
-
-    chrome_dir = profile_dir / "chrome"
-    chrome_dir.mkdir(parents=True, exist_ok=True)
-
-    image_full_path = Path(image_path).resolve()
-    target_image = chrome_dir / "randombg_wallpaper.png"
-    try:
-        shutil.copyfile(image_full_path, target_image)
-    except OSError:
-        return
-
-    file_url = target_image.resolve().as_uri()
-    css = (
-        '@-moz-document url("about:newtab"), url("about:home") {\n'
-        "  body, #root {\n"
-        f'    background-image: url("{file_url}");\n'
-        "    background-size: cover !important;\n"
-        "    background-position: center center !important;\n"
-        "    background-repeat: no-repeat !important;\n"
-        "  }\n"
-        "}\n"
-    )
-
-    user_content = chrome_dir / "userContent.css"
-    try:
-        user_content.write_text(css, encoding="utf-8")
-    except OSError:
-        return
-
-    _ensure_firefox_prefs(profile_dir)
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
 
 
 def _chromium_pref_files(user_data_dir: Path) -> list[Path]:
@@ -283,20 +226,12 @@ def _chromium_pref_files(user_data_dir: Path) -> list[Path]:
     return prefs
 
 
-<<<<<<< HEAD
 def _locate_firefox_profiles() -> list[Path]:
-=======
-def _locate_firefox_profile() -> Path | None:
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
     system = platform.system().lower()
     if system == "windows":
         base = os.getenv("APPDATA")
         if not base:
-<<<<<<< HEAD
             return []
-=======
-            return None
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
         base_dir = Path(base) / "Mozilla" / "Firefox"
     elif system == "darwin":
         base_dir = Path.home() / "Library" / "Application Support" / "Firefox"
@@ -305,25 +240,15 @@ def _locate_firefox_profile() -> Path | None:
 
     profiles_ini = base_dir / "profiles.ini"
     if not profiles_ini.exists():
-<<<<<<< HEAD
         return []
-=======
-        return None
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
 
     parser = configparser.RawConfigParser()
     try:
         parser.read(profiles_ini)
     except (OSError, configparser.Error):
-<<<<<<< HEAD
         return []
 
     paths: list[Path] = []
-=======
-        return None
-
-    profiles: list[tuple[str, Path]] = []
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
     default_profile: Path | None = None
 
     for section in parser.sections():
@@ -335,7 +260,6 @@ def _locate_firefox_profile() -> Path | None:
         is_relative = parser.get(section, "IsRelative", fallback="1") == "1"
         profile_path = Path(path_value)
         profile_path = (base_dir / profile_path) if is_relative else profile_path
-<<<<<<< HEAD
         if not profile_path.exists():
             continue
         if parser.get(section, "Default", fallback="0") == "1":
@@ -355,23 +279,6 @@ def _ensure_firefox_prefs(profile_dir: Path, newtab_html: Path) -> None:
         "browser.newtabpage.activity-stream.newTabURL": newtab_html.resolve().as_uri(),
         "browser.newtabpage.enabled": True,
         "browser.newtabpage.activity-stream.enabled": True,
-=======
-        if parser.get(section, "Default", fallback="0") == "1" and profile_path.exists():
-            default_profile = profile_path
-        if profile_path.exists():
-            profiles.append((section, profile_path))
-
-    if default_profile:
-        return default_profile
-    return profiles[0][1] if profiles else None
-
-
-def _ensure_firefox_prefs(profile_dir: Path) -> None:
-    prefs_path = profile_dir / "user.js"
-    wanted = {
-        "toolkit.legacyUserProfileCustomizations.stylesheets": True,
-        "browser.newtabpage.activity-stream.newTabURL": "about:newtab",
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
     }
 
     existing: dict[str, str] = {}
@@ -406,7 +313,6 @@ def _ensure_firefox_prefs(profile_dir: Path) -> None:
         return
 
 
-<<<<<<< HEAD
 def _write_firefox_newtab_html(target: Path, image_url: str) -> None:
     """Write a minimal new-tab HTML that uses the provided image URL as background."""
 
@@ -433,8 +339,6 @@ def _write_firefox_newtab_html(target: Path, image_url: str) -> None:
         pass
 
 
-=======
->>>>>>> 4b5b5529ed7a8b1edaec96a6c0e1d64a7b77bea1
 def iter_images(folder: str) -> List[str]:
     """Return image file paths from a folder in randomized order."""
 
@@ -493,6 +397,30 @@ def _linux_screensaver_active() -> bool:
     return "is active" in process.stdout.lower()
 
 
+def _windows_session_locked() -> bool:
+    """Return True when the Windows workstation is locked (Win+L)."""
+
+    try:
+        import ctypes
+    except ImportError:
+        return False
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    DESKTOP_SWITCHDESKTOP = 0x0100
+
+    hDesktop = user32.OpenInputDesktop(0, False, DESKTOP_SWITCHDESKTOP)
+    if not hDesktop:
+        return False
+
+    try:
+        # SwitchDesktop returns False when the workstation is locked.
+        if user32.SwitchDesktop(hDesktop) == 0:
+            return True
+        return False
+    finally:
+        user32.CloseDesktop(hDesktop)
+
+
 def screensaver_active() -> bool:
     """Best-effort detection of an active screensaver."""
 
@@ -502,3 +430,13 @@ def screensaver_active() -> bool:
     if system == "darwin":
         return _macos_screensaver_active()
     return _linux_screensaver_active()
+
+
+def session_locked() -> bool:
+    """Return True when the OS session is locked and timers should pause."""
+
+    system = platform.system().lower()
+    if system == "windows":
+        return _windows_session_locked()
+    return False
+

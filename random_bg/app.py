@@ -29,11 +29,7 @@ from tkinter import filedialog, messagebox, ttk
 import tkinter as tk
 
 from .autostart import AutostartError, AutostartManager
-from .wallpaper import (
-    iter_images,
-    screensaver_active,
-    set_wallpaper,
-)
+from .wallpaper import iter_images, screensaver_active, session_locked, set_wallpaper
 
 CONFIG_FILE = Path.home() / ".random_bg_config.json"
 DEFAULT_INTERVAL = 300
@@ -152,8 +148,8 @@ class WallpaperService:
             return random.randint(min_wait, max_wait)
         return max(10, int(self.settings.interval_seconds))
 
-    def _wait_for_screensaver(self) -> bool:
-        while screensaver_active():
+    def _wait_while_paused(self) -> bool:
+        while screensaver_active() or session_locked():
             if self._stop_event.wait(5):
                 return True
         return False
@@ -163,8 +159,8 @@ class WallpaperService:
         step = 1.0
 
         while elapsed < wait_time:
-            if screensaver_active():
-                if self._wait_for_screensaver():
+            if screensaver_active() or session_locked():
+                if self._wait_while_paused():
                     return True
                 continue
 
@@ -176,7 +172,7 @@ class WallpaperService:
 
     def _run(self) -> None:
         while not self._stop_event.is_set():
-            if self._wait_for_screensaver():
+            if self._wait_while_paused():
                 break
 
             self.next_wallpaper()
